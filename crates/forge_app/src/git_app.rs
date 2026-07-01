@@ -128,16 +128,16 @@ impl<S: Services + EnvironmentInfra<Config = forge_config::ForgeConfig>> GitApp<
 
     /// Commits changes with the provided commit message.
     ///
-    /// When `use_forge_committer` is true, sets ForgeCode as the Git committer
-    /// via `GIT_COMMITTER_NAME` and `GIT_COMMITTER_EMAIL` environment
-    /// variables while preserving the user as the author.
+    /// When `use_forge_committer` is true, appends a `Co-authored-by`
+    /// trailer crediting ForgeCode to the commit message while preserving
+    /// the user as the author and committer.
     ///
     /// # Arguments
     ///
     /// * `message` - The commit message to use
     /// * `has_staged_files` - Whether there are staged files
-    /// * `use_forge_committer` - Whether to override the Git committer with
-    ///   ForgeCode identity
+    /// * `use_forge_committer` - Whether to credit ForgeCode via a
+    ///   `Co-authored-by` trailer in the commit message
     ///
     /// # Errors
     ///
@@ -388,21 +388,25 @@ impl<S: Services + EnvironmentInfra<Config = forge_config::ForgeConfig>> GitApp<
     }
 }
 
+/// The `Co-authored-by` trailer appended to commit messages when ForgeCode
+/// attribution is enabled. The email address is a placeholder.
+const FORGE_CO_AUTHOR_TRAILER: &str = "Co-authored-by: ForgeCode <noreply@forgecode.dev>";
+
 /// Builds the `git commit` shell command string.
 ///
-/// When `use_forge_committer` is true, prefixes the command with
-/// `GIT_COMMITTER_NAME` and `GIT_COMMITTER_EMAIL` environment variables
-/// to set ForgeCode as the committer.
+/// When `use_forge_committer` is true, appends a `Co-authored-by` trailer
+/// crediting ForgeCode to the commit message. This avoids relying on inline
+/// environment variable assignments (`GIT_COMMITTER_NAME=... git commit`),
+/// which are POSIX-shell specific and fail on Windows shells.
 fn build_commit_command(message: &str, flags: &str, use_forge_committer: bool) -> String {
+    let message = if use_forge_committer {
+        format!("{message}\n\n{FORGE_CO_AUTHOR_TRAILER}")
+    } else {
+        message.to_string()
+    };
     // Escape single quotes in the message by replacing ' with '\''
     let escaped_message = message.replace('\'', r"'\''");
-    if use_forge_committer {
-        format!(
-            "GIT_COMMITTER_NAME='ForgeCode' GIT_COMMITTER_EMAIL='noreply@forgecode.dev' git commit {flags} -m '{escaped_message}'"
-        )
-    } else {
-        format!("git commit {flags} -m '{escaped_message}'")
-    }
+    format!("git commit {flags} -m '{escaped_message}'")
 }
 
 #[cfg(test)]
@@ -414,14 +418,14 @@ mod tests {
     #[test]
     fn test_build_commit_command_with_forge_committer_staged() {
         let actual = build_commit_command("feat: add feature", "", true);
-        let expected = "GIT_COMMITTER_NAME='ForgeCode' GIT_COMMITTER_EMAIL='noreply@forgecode.dev' git commit  -m 'feat: add feature'";
+        let expected = "git commit  -m 'feat: add feature\n\nCo-authored-by: ForgeCode <noreply@forgecode.dev>'";
         assert_eq!(actual, expected);
     }
 
     #[test]
     fn test_build_commit_command_with_forge_committer_unstaged() {
         let actual = build_commit_command("fix: bug", " -a", true);
-        let expected = "GIT_COMMITTER_NAME='ForgeCode' GIT_COMMITTER_EMAIL='noreply@forgecode.dev' git commit  -a -m 'fix: bug'";
+        let expected = "git commit  -a -m 'fix: bug\n\nCo-authored-by: ForgeCode <noreply@forgecode.dev>'";
         assert_eq!(actual, expected);
     }
 
@@ -442,7 +446,7 @@ mod tests {
     #[test]
     fn test_build_commit_command_escapes_single_quotes() {
         let actual = build_commit_command("feat: it's done", "", true);
-        let expected = "GIT_COMMITTER_NAME='ForgeCode' GIT_COMMITTER_EMAIL='noreply@forgecode.dev' git commit  -m 'feat: it'\\''s done'";
+        let expected = "git commit  -m 'feat: it'\\''s done\n\nCo-authored-by: ForgeCode <noreply@forgecode.dev>'";
         assert_eq!(actual, expected);
     }
 }
