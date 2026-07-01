@@ -1,11 +1,21 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::env;
 
 use forge_app::EnvironmentInfra;
 use forge_config::{ConfigReader, ForgeConfig, ModelConfig};
 use forge_domain::{ConfigOperation, Environment};
 use tracing::debug;
+
+#[cfg(target_os = "windows")]
+fn detect_windows_shell() -> String {
+    if which::which("pwsh").is_ok() {
+        return "pwsh.exe".to_string();
+    }
+
+    "powershell.exe".to_string()
+}
 
 /// Builds a [`forge_domain::Environment`] from runtime context only.
 ///
@@ -14,13 +24,13 @@ use tracing::debug;
 /// values are now accessed through `EnvironmentInfra::get_config()`.
 pub fn to_environment(cwd: PathBuf) -> Environment {
     Environment {
-        os: std::env::consts::OS.to_string(),
+        os: env::consts::OS.to_string(),
         cwd,
         home: dirs::home_dir(),
         shell: if cfg!(target_os = "windows") {
-            std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".to_string())
+            detect_windows_shell()
         } else {
-            std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
+            env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
         },
         base_path: ConfigReader::base_path(),
     }
@@ -117,11 +127,11 @@ impl EnvironmentInfra for ForgeEnvironmentInfra {
     type Config = ForgeConfig;
 
     fn get_env_var(&self, key: &str) -> Option<String> {
-        std::env::var(key).ok()
+        env::var(key).ok()
     }
 
     fn get_env_vars(&self) -> BTreeMap<String, String> {
-        std::env::vars().collect()
+        env::vars().collect()
     }
 
     fn get_environment(&self) -> Environment {
@@ -176,15 +186,15 @@ mod tests {
         let fixture_cwd = PathBuf::from("/any/cwd");
         let expected = to_environment(fixture_cwd.clone()).base_path;
 
-        let previous = std::env::var("FORGE_CONFIG").ok();
-        unsafe { std::env::set_var("FORGE_CONFIG", "/custom/config/dir") };
+        let previous = env::var("FORGE_CONFIG").ok();
+        unsafe { env::set_var("FORGE_CONFIG", "/custom/config/dir") };
 
         let actual = to_environment(fixture_cwd).base_path;
 
         if let Some(value) = previous {
-            unsafe { std::env::set_var("FORGE_CONFIG", value) };
+            unsafe { env::set_var("FORGE_CONFIG", value) };
         } else {
-            unsafe { std::env::remove_var("FORGE_CONFIG") };
+            unsafe { env::remove_var("FORGE_CONFIG") };
         }
 
         assert_eq!(actual, expected);
