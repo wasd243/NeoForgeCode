@@ -50,6 +50,7 @@ pub fn select_workspace_file(cwd: &Path, query: Option<String>) -> anyhow::Resul
         .query(Some(query.unwrap_or_default()))
         .preview(Some(preview_cmd))
         .preview_layout(PreviewLayout { placement: PreviewPlacement::Bottom, percent: 75 })
+        .working_dir(Some(cwd.to_path_buf()))
         .prompt()?
         .map(|row| row.raw))
 }

@@ -61,7 +61,7 @@ impl InputBuilder {
     pub fn prompt(self) -> Result<Option<String>> {
         // Bail immediately when stdin is not a terminal to prevent the process
         // from blocking indefinitely on a detached or non-interactive session.
-        if !std::io::stdin().is_terminal() {
+        if !io::stdin().is_terminal() {
             return Ok(None);
         }
 

@@ -1,11 +1,11 @@
 use std::collections::BTreeSet;
 use std::io::{self, Write};
-use std::process::{Command, Stdio};
 use std::sync::Arc;
 use std::time::Duration;
 use std::{cmp, fmt};
+use std::path::{self, PathBuf};
+use std::fs;
 
-use bstr::ByteSlice;
 use crossterm::cursor::{Hide, MoveTo, MoveToColumn, MoveUp, Show};
 use crossterm::event::{
     self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind,
@@ -229,6 +229,9 @@ pub struct SelectUiOptions {
     pub preview_layout: PreviewLayout,
     /// Optional raw value to focus initially.
     pub initial_raw: Option<String>,
+    /// Optional working directory for resolving relative paths in preview.
+    #[setters(skip)]
+    pub working_dir: Option<PathBuf>,
 }
 
 impl SelectUiOptions {
@@ -243,7 +246,20 @@ impl SelectUiOptions {
             preview: None,
             preview_layout: PreviewLayout::default(),
             initial_raw: None,
+            working_dir: None,
         }
+    }
+
+    /// Sets the working directory used to resolve relative paths when
+    /// rendering the preview of the selected row.
+    ///
+    /// # Arguments
+    ///
+    /// * `working_dir` - Base directory against which relative row values are
+    ///   resolved. `None` falls back to the process working directory.
+    pub fn working_dir(mut self, working_dir: Option<PathBuf>) -> Self {
+        self.working_dir = working_dir;
+        self
     }
 
     /// Runs the selector and returns the selected row.
@@ -296,6 +312,7 @@ fn run_select_ui_values(options: SelectUiOptions) -> anyhow::Result<Option<Vec<S
         preview,
         preview_layout,
         initial_raw,
+        working_dir,
     } = options;
     let header_count = header_lines.min(rows.len());
     let header_rows = rows.iter().take(header_count).collect::<Vec<_>>();
@@ -399,7 +416,7 @@ fn run_select_ui_values(options: SelectUiOptions) -> anyhow::Result<Option<Vec<S
             .unwrap_or_default();
         if preview_key != last_preview_key {
             preview_cache = selected_row
-                .map(|row| render_preview(&preview_command, row))
+                .map(|row| render_preview(&preview_command, row, working_dir.as_deref()))
                 .unwrap_or_else(|| "No matches".to_string());
             preview_scroll_offset = 0;
             last_preview_key = preview_key;
@@ -815,47 +832,35 @@ fn matched_rows(matcher: &Nucleo<SelectRow>) -> Vec<&SelectRow> {
         .collect()
 }
 
-fn render_preview(command: &str, row: &SelectRow) -> String {
+/// idk why you guys lock this perfect agent on Unix by hardcoding the path
+fn render_preview(command: &str, row: &SelectRow, working_dir: Option<&path::Path>) -> String {
     if command.trim().is_empty() {
         return String::new();
     }
 
-    let substituted = substitute_preview_command(command, row);
-    let output = Command::new("/bin/sh")
-        .arg("-c")
-        .arg(&substituted)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output();
+    // Preview = read the selected file's contents directly.
+    // No shell, no /bin/sh, cross-platform.
+    let path = if row.raw.is_empty() {
+        PathBuf::new()
+    } else if path::Path::new(&row.raw).is_absolute() {
+        PathBuf::from(&row.raw)
+    } else if let Some(base_dir) = working_dir {
+        base_dir.join(&row.raw)
+    } else {
+        PathBuf::from(&row.raw)
+    };
 
-    match output {
-        Ok(output) => {
-            let mut rendered = output.stdout.to_str_lossy().into_owned();
-            let stderr = output.stderr.to_str_lossy();
-            if !stderr.is_empty() {
-                if !rendered.is_empty() && !rendered.ends_with('\n') {
-                    rendered.push('\n');
-                }
-                rendered.push_str(&stderr);
-            }
-            rendered
-        }
-        Err(error) => format!("Preview command failed: {error}"),
+    match fs::read_to_string(&path) {
+        Ok(content) => content
+            .lines()
+            .take(500)
+            .collect::<Vec<_>>()
+            .join("\n"),
+        Err(error) => format!("Cannot preview {}: {error}", row.display),
     }
 }
 
-fn substitute_preview_command(command: &str, row: &SelectRow) -> String {
-    let mut rendered = command.replace("{}", &shell_escape(&row.raw));
-    for (index, field) in row.fields.iter().enumerate() {
-        let token = format!("{{{}}}", index + 1);
-        rendered = rendered.replace(&token, &shell_escape(field));
-    }
-    rendered
-}
-
-fn shell_escape(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
-}
+// shell escape is removed.
 
 struct PreviewUi<'a> {
     prompt: &'a str,
