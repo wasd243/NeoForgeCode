@@ -423,8 +423,12 @@ impl<A: API + ConsoleWriter + 'static, F: Fn(ForgeConfig) -> A + Send + Sync> UI
                 ))?;
             }
             Some(content) => {
+                // I don't know why they're going to support android target, this is unnecessary, and
+                // nobody will code on their phones.
+                // I've let my agent refactor this 5000+ lines shit
+                // NO MORE TELEPHONE SUPPORT IN NEOFORGECODE
                 #[cfg(not(target_os = "android"))]
-                let copied = arboard::Clipboard::new()
+                let _copied = arboard::Clipboard::new()
                     .and_then(|mut cb| cb.set_text(content.clone()))
                     .is_ok();
             }
