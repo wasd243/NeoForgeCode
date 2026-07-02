@@ -67,21 +67,21 @@ pub fn display(cli_mode: bool) -> io::Result<()> {
     let tips: Vec<(&str, &str)> = if cli_mode {
         // CLI mode: only show relevant commands
         vec![
-            ("New conversation:", ":new"),
-            ("Get started:", ":info, :conversation"),
-            ("Switch model:", ":model"),
-            ("Switch provider:", ":provider"),
-            ("Switch agent:", ":<agent_name> e.g. :forge or :muse"),
+            ("New conversation:", "/new"),
+            ("Get started:", "/info, /conversation"),
+            ("Switch model:", "/model"),
+            ("Switch provider:", "/provider"),
+            ("Switch agent:", "/<agent_name> e.g. /forge or /muse"),
         ]
     } else {
         // Interactive mode: show all commands
         vec![
-            ("New conversation:", ":new"),
-            ("Get started:", ":info, :usage, :help, :conversation"),
-            ("Switch model:", ":model"),
-            ("Switch agent:", ":forge or :muse or :agent"),
-            ("Update:", ":update"),
-            ("Quit:", ":exit or <CTRL+D>"),
+            ("New conversation:", "/new"),
+            ("Get started:", "/info, /usage, /help, /conversation"),
+            ("Switch model:", "/model"),
+            ("Switch agent:", "/forge or /muse or /agent"),
+            ("Update:", "/update"),
+            ("Quit:", "/exit or <CTRL+D>"),
         ]
     };
 
@@ -113,25 +113,25 @@ pub fn display(cli_mode: bool) -> io::Result<()> {
     Ok(())
 }
 
-/// Encourages users to use the zsh plugin for a better experience.
+/// zsh? no way bro, you're not using zsh on Windows
 fn display_zsh_encouragement() {
     let tip = DisplayBox::new(vec![
         format!(
             "{} {}",
             "TIP:".bold().yellow(),
-            "For the best experience, use our zsh plugin!".bold()
+            "NeoForgeCode is a fork from ForgeCode".bold()
         ),
         format!(
-            "{} {} {}",
+            "{} {}",
             "·".dimmed(),
-            "Set up forge via our zsh plugin:".dimmed(),
-            "forge zsh setup".bold().green(),
+            "NeoForgeCode provides better TUI and Windows support".bold().green(),
         ),
         format!(
-            "{} {} {}",
+            "{} {} {} {}",
             "·".dimmed(),
-            "Learn more:".dimmed(),
-            "https://forgecode.dev/docs/zsh-support".cyan()
+            "Learn more? You cannot learn more because I'm too lazy to write docs".dimmed(),
+            "You can directly go ForgeCode repo for docs.".dimmed(),
+            "https://github.com/tailcallhq/forgecode.git".cyan()
         ),
     ]);
     println!("{}", tip);
