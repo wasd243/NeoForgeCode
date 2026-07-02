@@ -784,5 +784,5 @@ impl AppCommand {
 }
 
 #[cfg(test)]
-#[path = "../test/command_test.rs"]
+#[path = "../tests/command_test.rs"]
 mod tests;

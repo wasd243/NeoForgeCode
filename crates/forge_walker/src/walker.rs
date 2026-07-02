@@ -717,6 +717,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(unix)]
     async fn test_walker_excludes_symlinks() {
         let fixture = fixtures::Fixture::default();
 
@@ -747,6 +748,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(unix)]
     async fn test_walker_excludes_dangling_symlinks() {
         let fixture = fixtures::Fixture::default();
 

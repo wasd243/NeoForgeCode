@@ -155,6 +155,7 @@ impl<F: CommandInfra + WalkerInfra + 'static> FileDiscovery for FdDefault<F> {
 }
 
 #[cfg(test)]
+#[cfg(unix)]
 mod tests {
     use std::fs::{self, File};
     use std::io::Write;

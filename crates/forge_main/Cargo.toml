@@ -3,6 +3,10 @@ name = "forge_main"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
+# tests/command_test.rs is included into src/model.rs via #[path] as a unit
+# test module (it exercises private items), so it must not be compiled as a
+# standalone integration test crate.
+autotests = false
 
 [[bin]]
 name = "forge"
