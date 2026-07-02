@@ -246,15 +246,12 @@ impl<A: API + ConsoleWriter + 'static, F: Fn(ForgeConfig) -> A + Send + Sync> UI
             None
         };
 
-        let mut info = if let Some(usage) = conversation_usage {
+        let info = if let Some(usage) = conversation_usage {
             Info::from(&usage)
         } else {
             Info::new()
         };
 
-        if let Ok(Some(user_usage)) = self.api.user_usage().await {
-            info = info.extend(Info::from(&user_usage));
-        }
 
         self.writeln(info)?;
         self.spinner.stop(None)?;
