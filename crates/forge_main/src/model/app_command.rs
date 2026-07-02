@@ -33,10 +33,10 @@ pub enum AppCommand {
     ConfigReload,
 
     /// Set the reasoning effort level.
-    /// This can be triggered with the '/reasoning-effort' command (alias: re).
-    #[strum(props(usage = "Set reasoning effort for current session [alias: re]"))]
-    #[command(name = "reasoning-effort", alias = "re")]
-    ReasoningEffort,
+    /// This can be triggered with the '/reasoning-effort' command.
+    #[strum(props(usage = "Set reasoning effort for current session"))]
+    #[command(name = "effort")]
+    Effort,
 
     /// Set the reasoning effort level in global config.
     /// This can be triggered with the '/config-reasoning-effort' command
@@ -46,11 +46,10 @@ pub enum AppCommand {
     ConfigReasoningEffort,
 
     /// Set the model used for commit message generation.
-    /// This can be triggered with the '/config-commit-model' command (alias:
-    /// ccm).
+    /// This can be triggered with the '/commit-model' command.
     #[strum(props(usage = "Set the model used for commit message generation [alias: ccm]"))]
-    #[command(name = "config-commit-model", alias = "ccm")]
-    ConfigCommitModel,
+    #[command(name = "commit-model")]
+    CommitModel,
 
     /// Set the model used for command suggestion generation.
     /// This can be triggered with the '/config-suggest-model' command (alias:
@@ -204,6 +203,8 @@ pub enum AppCommand {
     Help,
 
     /// Dumps the current conversation into a json file or html file
+    /// ---
+    /// I don't know why not .md, this legacy command should be replaced with `/save`
     #[strum(props(usage = "Save conversation as JSON or HTML (use /dump --html for HTML format)"))]
     Dump {
         /// Output as HTML instead of JSON
@@ -343,9 +344,9 @@ impl AppCommand {
             AppCommand::Config => "config",
             AppCommand::ConfigModel => "config-model",
             AppCommand::ConfigReload => "config-reload",
-            AppCommand::ReasoningEffort => "reasoning-effort",
+            AppCommand::Effort => "effort",
             AppCommand::ConfigReasoningEffort => "config-reasoning-effort",
-            AppCommand::ConfigCommitModel => "config-commit-model",
+            AppCommand::CommitModel => "commit-model",
             AppCommand::ConfigSuggestModel => "config-suggest-model",
             AppCommand::ConfigEdit => "config-edit",
             AppCommand::Skill => "skill",
