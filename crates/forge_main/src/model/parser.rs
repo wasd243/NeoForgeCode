@@ -86,7 +86,7 @@ impl ForgeCommandManager {
         let first = tokens.next().unwrap_or("");
 
         // Non-command input — pass straight through as a message.
-        let is_command = first.starts_with('/') || first.starts_with(':');
+        let is_command = first.starts_with('/');
         if !is_command {
             return Ok(AppCommand::Message(input.to_string()));
         }
@@ -94,13 +94,12 @@ impl ForgeCommandManager {
         // Strip the sentinel character so Clap only sees the bare command name.
         let bare = first
             .strip_prefix('/')
-            .or_else(|| first.strip_prefix(':'))
             .unwrap_or(first);
         let command_prefix = first
             .chars()
             .next()
-            .filter(|c| *c == '/' || *c == ':')
-            .unwrap_or(':');
+            .filter(|c| *c == '/')
+            .unwrap(); // Why remove all `:` characters? because I don't like it.
         let rest: Vec<&str> = tokens.collect();
 
         // Build argv: [bare_command, arg1, arg2, …]
