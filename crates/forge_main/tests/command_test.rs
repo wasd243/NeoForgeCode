@@ -3,11 +3,12 @@
 //! disabled in Cargo.toml) because these tests exercise private items.
 
 use std::fmt::Display;
+use std::sync::{Arc, Mutex};
 
 use colored::Colorize;
 use console::strip_ansi_codes;
 use forge_api::{
-    AnyProvider, InputModality, Model, ModelId, ModelSource, ProviderId, ProviderResponse,
+    AnyProvider, InputModality, Model, ModelId, ModelSource, ProviderId, ProviderResponse, Template,
 };
 use forge_domain::Provider;
 use pretty_assertions::assert_eq;

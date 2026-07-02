@@ -3,7 +3,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use colored::Colorize;
-use forge_api::{Conversation, Environment, ForgeConfig, Metrics, Role, Usage, UserUsage};
+use forge_api::{Conversation, Environment, ForgeConfig, Metrics, Model, Role, Usage, UserUsage};
 use forge_tracker::VERSION;
 use num_format::{Locale, ToFormattedString};
 
@@ -605,6 +605,34 @@ fn get_git_branch() -> Option<String> {
             .filter(|s| !s.is_empty())
     } else {
         None
+    }
+}
+
+/// Formats a model context length for display (e.g. "128.0K context").
+fn humanize_context_length(length: u64) -> String {
+    if length >= 1_000_000 {
+        format!("{:.1}M context", length as f64 / 1_000_000.0)
+    } else if length >= 1_000 {
+        format!("{:.1}K context", length as f64 / 1_000.0)
+    } else {
+        format!("{length} context")
+    }
+}
+
+/// Create an info instance listing models with their context lengths
+impl From<&[Model]> for Info {
+    fn from(models: &[Model]) -> Self {
+        let mut info = Info::new();
+
+        for model in models.iter() {
+            if let Some(context_length) = model.context_length {
+                info = info.add_key_value(&model.id, humanize_context_length(context_length));
+            } else {
+                info = info.add_value(model.id.as_str());
+            }
+        }
+
+        info
     }
 }
 
