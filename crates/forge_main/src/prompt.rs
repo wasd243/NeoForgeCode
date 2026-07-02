@@ -11,13 +11,13 @@ use crate::display_constants::markers;
 use crate::utils::humanize_number;
 
 // Nerd font symbols — left prompt
-const DIR_SYMBOL: &str = "\u{ea83}"; // 󪃃  folder icon
-const BRANCH_SYMBOL: &str = "\u{f418}"; //   branch icon
-const SUCCESS_SYMBOL: &str = "\u{f013e}"; // 󰄾  chevron
+const DIR_SYMBOL: &str = "📁"; // folder icon
+const BRANCH_LABEL: &str = "[branch]";
+const SUCCESS_SYMBOL: &str = "✓"; // chevron
 
 // Nerd font symbols — right prompt (ZSH rprompt)
-const AGENT_SYMBOL: &str = "\u{f167a}";
-const MODEL_SYMBOL: &str = "\u{ec19}";
+const AGENT_SYMBOL: &str = "🤖";
+const MODEL_SYMBOL: &str = "🧠";
 
 /// Terminal width at which the reasoning effort label switches from the
 /// compact three-letter form (e.g. `MED`) to the full uppercase label
@@ -102,7 +102,7 @@ impl ForgePrompt {
             write!(
                 result,
                 " {}",
-                branch_style.paint(format!("{BRANCH_SYMBOL} {branch}"))
+                branch_style.paint(format!("{BRANCH_LABEL} {branch}"))
             )
             .unwrap();
         }
@@ -306,7 +306,7 @@ mod tests {
 
         // Agent name is on the right prompt, not the left
         // Branch icon and name present
-        assert!(actual.contains(BRANCH_SYMBOL));
+        assert!(actual.contains(BRANCH_LABEL));
         assert!(actual.contains("main"));
     }
 
